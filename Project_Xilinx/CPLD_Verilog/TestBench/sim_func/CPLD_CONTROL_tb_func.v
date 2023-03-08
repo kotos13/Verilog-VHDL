@@ -88,4 +88,155 @@ reg LED_SDI_TB_signal;
 reg Temp_sensor_SO_TB_signal;
 reg Temp_sensor_CS_TB_signal;
 reg Temp_sensor_SCK_TB_signal;
-reg [C_TEMP_SENSOR_DATA_WL_TB-1:0] Temp_sensor_Data_TB_signal = {(C_TEMP_SENSOR_DATA_WL_TB-1)(1'b0)}
+reg [C_TEMP_SENSOR_DATA_WL_TB-1:0] Temp_sensor_Data_TB_signal = {(C_TEMP_SENSOR_DATA_WL_TB-1)(1'b0)};
+
+// Simulation procedures
+module CPLD_CONTROL CPLD_CONTROL_inst (
+	// Generic map
+	.C_SIMULATION(C_SIMULATION_TB),
+	.C_LEDS_QUANTITY(C_LEDS_QUANTITY_TB),
+	.C_TEMP_SENSOR_PO_WL(C_TEMP_SENSOR_PO_WL_TB),
+	.C_TEMPERATURE_DATA_WL(C_TEMP_SENSOR_DATA_WL_TB),
+	.C_MAX_TEMP(C_MAX_TEMP_TB),
+
+	// Clock input
+	.CLK_IN(CLK_TB_signal),
+
+	// Power control inputs
+	.PGOOD_All_bus_IN(Test_PGOOD_All_bus_TB_signal),
+
+	// User switch inputs
+	.KEY_CPLD_IN(Test_KEY_CPLD_TB_signal),
+
+	// LEDs control inputs
+	// .LED_DRIVER_SDO_IN(LED_SDO_TB_signal),
+
+	// Temperature sensor data input
+	.Temp_sensor_SO_IN(Temp_sensor_SO_TB_signal),
+
+	// Power enable outputs
+	.EN_ANALOG_PWR_OUT(EN_Power_TB_signal),
+	.EN_DIGITAL_3V3_OUT(),
+	.EN_5V0_POWER_OUT(),
+	.EN_VCC_2V5_OUT(),
+	.EN_VCC_1V0_INT_OUT(),
+
+	// Front LEDs outputs
+	.LED_CPLD_0_RED_OUT(),
+	.LED_CPLD_1_GREEN_OUT(),
+	.LED_CPLD_2_RED_OUT(),
+	.LED_CPLD_3_GREEN_OUT(),
+
+	// LEDs control outputs
+	.LED_DRIVER_CLK_OUT(LED_Clk_TB_signal),
+	.LED_DRIVER_SDI_OUT(LED_SDI_TB_signal),
+	.LED_DRIVER_LE_OUT(LED_LE_TB_signal),
+
+	// Temperature sensor control outputs
+	.Temp_sensor_CS_OUT(Temp_sensor_CS_TB_signal),
+	.Temp_sensor_SCK_OUT(Temp_sensor_SCK_TB_signal),
+
+	// PROG B output
+	.FPGA_PROG_B_OUT()
+);
+endmodule
+
+module LED_driver RTL_LED_driver (
+    .C_N(C_LEDS_QUANTITY_TB),
+
+    .LED_Clk(LED_Clk_TB_signal),
+    .LED_LE(LED_LE_TB_signal),
+    .LED_OE(1'b0),
+    .LED_SDI(LED_SDI_TB_signal),
+    .LED_SDO(),
+    .LED_PO()
+);
+endmodule
+
+module Temp_sensor_model Behavioral_Temp_sensor_model(
+    .C_TEMP_SENSOR_PO_WL(C_TEMP_SENSOR_PO_WL_TB),
+    .C_TEMP_SENSOR_DATA_WL(C_TEMP_SENSOR_DATA_WL_TB),
+
+    .Temp_sensor_Data_IN(Temp_sensor_Data_TB_signal),
+    .Temp_sensor_SCK_IN(Temp_sensor_SCK_TB_signal),
+    .Temp_sensor_CS_IN(Temp_sensor_CS_TB_signal),
+
+    .Temp_sensor_SO_OUT(Temp_sensor_SO_TB_signal)
+);
+endmodule
+
+//Clock
+always #CLK_PERIOD_TB_const/2 CLK_TB_signal = ~CLK_TB_signal;
+
+if (C_CRASH_TYPE_TB == 0 || C_CRASH_TYPE_TB == 2) begin : GEN_POWER_CRASH
+    // Test_PGOOD_All_bus_TB_signal
+    reg [31:0] Test_PGOOD_All_bus_TB_signal;
+
+    // '1' - ok, '0' - fail
+    always begin : TEST_POWER_GOOD
+        Test_PGOOD_All_bus_TB_signal <= 32'b0;
+        #2.8;
+        Test_PGOOD_All_bus_TB_signal <= 32'h3FFFFFFF;
+        #7.2;
+        Test_PGOOD_All_bus_TB_signal <= 32'h0BFFFFFFE;
+        wait (EN_Power_TB_signal);
+        #50;
+        Test_PGOOD_All_bus_TB_signal <= 32'b0;
+    end
+end
+
+//Temp_sensor_Data_TB_signal
+always @(posedge clk) begin
+    #5; // wait for 5 units of simulation time
+    if (C_CRASH_TYPE_TB == 0) begin
+        Temp_sensor_Data_TB_signal <= {C_TEMP_SENSOR_DATA_WL_TB{1'b0}}; // zero the signal
+        Temp_sensor_Data_TB_signal <= $signed((C_MAX_TEMP_TB-1.0) / 0.0625); // compute and assign value
+    end
+    else begin
+        Temp_sensor_Data_TB_signal <= {C_TEMP_SENSOR_DATA_WL_TB{1'b0}};
+        Temp_sensor_Data_TB_signal <= $signed((C_MAX_TEMP_TB+1.0) / 0.0625);
+    end
+end
+
+if (C_CRASH_TYPE_TB == 1) begin : TEMP_CRASH_GEN
+    // Test_PGOOD_All_bus_TB_signal
+    always @(posedge clk) begin
+        Test_PGOOD_All_bus_TB_signal <= 28'b0;
+        #2.8; // wait for 2.8 units of simulation time
+        Test_PGOOD_All_bus_TB_signal <= 28'h3fffff; // set to all ones
+        wait (EN_Power_TB_signal); // wait for EN_Power_TB_signal to change
+        #50; // wait for 50 units of simulation time
+        Test_PGOOD_All_bus_TB_signal <= 28'b0;
+        wait;
+    end
+end
+
+//Temp_sensor_Data_TB_signal
+if (C_CRASH_TYPE_TB == 0) begin : TEMP_GOOD_GEN
+    // TEST_TEMP_GOOD
+    always @(posedge clk) begin
+        #5; // wait for 5 units of simulation time
+        Temp_sensor_Data_TB_signal <= $signed((C_MAX_TEMP_TB-1.0) / 0.0625);
+        #25; // wait for 25 units of simulation time
+        Temp_sensor_Data_TB_signal <= $signed((C_MAX_TEMP_TB+1.0) / 0.0625);
+        wait;
+    end
+end
+
+// LED_TEST
+always @(posedge clk) begin
+    Test_KEY_CPLD_TB_signal <= 4'b1111; // turn off all LEDs
+    #4; // wait for 4 units of simulation time
+    Test_KEY_CPLD_TB_signal <= 4'b1110; // turn on LED_CPLD_0_RED_OUT
+    #1; // wait for 1 unit of simulation time
+    Test_KEY_CPLD_TB_signal <= 4'b1100; // turn on LED_CPLD_0_RED_OUT & LED_CPLD_1_GREEN_OUT
+    #1; // wait for 1 unit of simulation time
+    Test_KEY_CPLD_TB_signal <= 4'b1001; // turn on LED_CPLD_1_GREEN_OUT & LED_CPLD_2_RED_OUT
+    #1; // wait for 1 unit of simulation time
+    Test_KEY_CPLD_TB_signal <= 4'b0011; // turn on LED_CPLD_2_RED_OUT & LED_CPLD_3_GREEN_OUT
+    #1; // wait for 1 unit of simulation time
+    Test_KEY_CPLD_TB_signal <= 4'b0111; // turn on LED_CPLD_3_GREEN_OUT
+    #1; // wait for 1 unit of simulation time
+    Test_KEY_CPLD_TB_signal <= 4'b1111; // turn off all leds
+    wait;
+end
