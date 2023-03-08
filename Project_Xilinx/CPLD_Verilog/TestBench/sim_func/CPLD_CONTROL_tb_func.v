@@ -168,75 +168,67 @@ endmodule
 //Clock
 always #CLK_PERIOD_TB_const/2 CLK_TB_signal = ~CLK_TB_signal;
 
-if (C_CRASH_TYPE_TB == 0 || C_CRASH_TYPE_TB == 2) begin : GEN_POWER_CRASH
-    // Test_PGOOD_All_bus_TB_signal
-    reg [31:0] Test_PGOOD_All_bus_TB_signal;
-
-    // '1' - ok, '0' - fail
-    always begin : TEST_POWER_GOOD
-        Test_PGOOD_All_bus_TB_signal <= 32'b0;
-        #2.8;
-        Test_PGOOD_All_bus_TB_signal <= 32'h3FFFFFFF;
-        #7.2;
-        Test_PGOOD_All_bus_TB_signal <= 32'h0BFFFFFFE;
-        wait (EN_Power_TB_signal);
-        #50;
-        Test_PGOOD_All_bus_TB_signal <= 32'b0;
+// Test_PGOOD_All_bus_TB_signal
+always @(posedge clk) begin
+    if (C_CRASH_TYPE_TB == 0 || C_CRASH_TYPE_TB == 2) begin // Power crash or Power & Temperature crash
+        Test_PGOOD_All_bus_TB_signal <= 32'h00000000; // '0' - fail
+        #3; // Wait for 2.8 us
+        Test_PGOOD_All_bus_TB_signal <= 32'hFFFFFFFF; // '1' - ok
+        #7; // Wait for 7.2 us
+        Test_PGOOD_All_bus_TB_signal <= 32'hBFFFFFFE; // Specific value
+        @(posedge EN_Power_TB_signal); // Wait for EN_Power_TB_signal to change
+        #5; // Wait for 50 ns
+        Test_PGOOD_All_bus_TB_signal <= 32'h00000000; // '0' - fail
     end
 end
+
 
 //Temp_sensor_Data_TB_signal
 always @(posedge clk) begin
-    #5; // wait for 5 units of simulation time
+    #5; // Wait for 5 us
     if (C_CRASH_TYPE_TB == 0) begin
-        Temp_sensor_Data_TB_signal <= {C_TEMP_SENSOR_DATA_WL_TB{1'b0}}; // zero the signal
-        Temp_sensor_Data_TB_signal <= $signed((C_MAX_TEMP_TB-1.0) / 0.0625); // compute and assign value
-    end
-    else begin
-        Temp_sensor_Data_TB_signal <= {C_TEMP_SENSOR_DATA_WL_TB{1'b0}};
-        Temp_sensor_Data_TB_signal <= $signed((C_MAX_TEMP_TB+1.0) / 0.0625);
+        Temp_sensor_Data_TB_signal <= {C_TEMP_SENSOR_DATA_WL_TB{1'b0}} + ((C_MAX_TEMP_TB - 1.0) / 0.0625);
+    end else begin
+        Temp_sensor_Data_TB_signal <= {C_TEMP_SENSOR_DATA_WL_TB{1'b0}} + ((C_MAX_TEMP_TB + 1.0) / 0.0625);
     end
 end
 
-if (C_CRASH_TYPE_TB == 1) begin : TEMP_CRASH_GEN
-    // Test_PGOOD_All_bus_TB_signal
-    always @(posedge clk) begin
-        Test_PGOOD_All_bus_TB_signal <= 28'b0;
-        #2.8; // wait for 2.8 units of simulation time
-        Test_PGOOD_All_bus_TB_signal <= 28'h3fffff; // set to all ones
-        wait (EN_Power_TB_signal); // wait for EN_Power_TB_signal to change
-        #50; // wait for 50 units of simulation time
-        Test_PGOOD_All_bus_TB_signal <= 28'b0;
-        wait;
+
+always @(posedge clk) begin
+    if (C_CRASH_TYPE_TB == 1) begin // Temp crash
+        Test_PGOOD_All_bus_TB_signal <= 32'h00000000; // '0' - fail
+        #3; // Wait for 2.8 us
+        Test_PGOOD_All_bus_TB_signal <= 32'hFFFFFFFF; // '1' - ok
+        wait on EN_Power_TB_signal; // Wait for EN_Power_TB_signal to change
+        #5; // Wait for 50 ns
+        Test_PGOOD_All_bus_TB_signal <= 32'h00000000; // '0' - fail
     end
 end
+
 
 //Temp_sensor_Data_TB_signal
-if (C_CRASH_TYPE_TB == 0) begin : TEMP_GOOD_GEN
-    // TEST_TEMP_GOOD
-    always @(posedge clk) begin
-        #5; // wait for 5 units of simulation time
-        Temp_sensor_Data_TB_signal <= $signed((C_MAX_TEMP_TB-1.0) / 0.0625);
-        #25; // wait for 25 units of simulation time
-        Temp_sensor_Data_TB_signal <= $signed((C_MAX_TEMP_TB+1.0) / 0.0625);
-        wait;
+always @(posedge clk) begin
+    if (C_CRASH_TYPE_TB == 1) begin // Temp crash
+        #5; // Wait for 5 us
+        Temp_sensor_Data_TB_signal <= $sformatf("%0d", (C_MAX_TEMP_TB-1.0) / 0.0625); // Set Temp_sensor_Data_TB_signal
+        #25; // Wait for 25 us
+        Temp_sensor_Data_TB_signal <= $sformatf("%0d", (C_MAX_TEMP_TB+1.0) / 0.0625); // Set Temp_sensor_Data_TB_signal
     end
 end
 
-// LED_TEST
+// LED_TEST process
 always @(posedge clk) begin
     Test_KEY_CPLD_TB_signal <= 4'b1111; // turn off all LEDs
-    #4; // wait for 4 units of simulation time
+    #4; // wait for 4 us
     Test_KEY_CPLD_TB_signal <= 4'b1110; // turn on LED_CPLD_0_RED_OUT
-    #1; // wait for 1 unit of simulation time
+    #1; // wait for 1 us
     Test_KEY_CPLD_TB_signal <= 4'b1100; // turn on LED_CPLD_0_RED_OUT & LED_CPLD_1_GREEN_OUT
-    #1; // wait for 1 unit of simulation time
+    #1; // wait for 1 us
     Test_KEY_CPLD_TB_signal <= 4'b1001; // turn on LED_CPLD_1_GREEN_OUT & LED_CPLD_2_RED_OUT
-    #1; // wait for 1 unit of simulation time
+    #1; // wait for 1 us
     Test_KEY_CPLD_TB_signal <= 4'b0011; // turn on LED_CPLD_2_RED_OUT & LED_CPLD_3_GREEN_OUT
-    #1; // wait for 1 unit of simulation time
+    #1; // wait for 1 us
     Test_KEY_CPLD_TB_signal <= 4'b0111; // turn on LED_CPLD_3_GREEN_OUT
-    #1; // wait for 1 unit of simulation time
-    Test_KEY_CPLD_TB_signal <= 4'b1111; // turn off all leds
-    wait;
+    #1; // wait for 1 us
+    Test_KEY_CPLD_TB_signal <= 4'b1111; // turn off all LEDs
 end
