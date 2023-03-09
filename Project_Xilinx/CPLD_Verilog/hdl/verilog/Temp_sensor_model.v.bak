@@ -21,7 +21,7 @@ initial begin
     Temp_sensor_PO_Buf_signal[1:0] <= 2'bxx; 
 end 
 
-integer Data_serial_counter; 
+real Data_serial_counter; 
 always @(Temp_sensor_CS_IN or Temp_sensor_SCK_IN or Temp_sensor_Data_IN) begin 
     if (Temp_sensor_CS_IN == 0) begin 
         Temp_sensor_PO_Buf_signal[(C_TEMP_SENSOR_PO_WL-1):(C_TEMP_SENSOR_PO_WL-C_TEMP_SENSOR_DATA_WL)] <= Temp_sensor_Data_IN; 

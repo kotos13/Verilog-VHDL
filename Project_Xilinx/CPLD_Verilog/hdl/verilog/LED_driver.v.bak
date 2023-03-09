@@ -3,10 +3,10 @@ module LED_driver
 	parameter C_N = 16		// разрядность
 )
 (
-	input wire LED_Clk,
-	input wire LED_LE,
-	input wire LED_SDI,
-	input wire LED_OE,
+	input wire LED_Clk = 1'b0,
+	input wire LED_LE = 1'b0,
+	input wire LED_SDI = 1'b0,
+	input wire LED_OE = 1'b1,
 	output wire LED_SDO,
 	output reg [C_N-1:0] LED_PO = 0
 );

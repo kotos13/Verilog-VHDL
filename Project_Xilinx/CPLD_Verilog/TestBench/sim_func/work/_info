@@ -1,0 +1,54 @@
+m255
+K4
+z2
+13
+!s112 1.1
+!i10d 8192
+!i10e 25
+!i10f 100
+cModel Technology
+Z0 dE:/Verilog-VHDL-main/Project_Xilinx/CPLD_Verilog/TestBench/sim_func
+vLED_driver
+!s110 1678351427
+!i10b 1
+!s100 UEab9IEPh>?Rj1LTXHH^<3
+I;W:B1`6:jkl41ChoFFNcH1
+Z1 VDg1SIo80bB@j0V0VzS_@n1
+R0
+w1678350918
+8../../hdl/verilog/LED_driver.v
+F../../hdl/verilog/LED_driver.v
+L0 1
+Z2 OL;L;10.7c;67
+r1
+!s85 0
+31
+Z3 !s108 1678351427.000000
+!s107 ../../hdl/verilog/LED_driver.v|
+!s90 -reportprogress|300|../../hdl/verilog/LED_driver.v|
+!i113 0
+Z4 o-L mtiAvm -L mtiRnm -L mtiOvm -L mtiUvm -L mtiUPF -L infact
+Z5 tCvgOpt 0
+n@l@e@d_driver
+vTemp_sensor_model
+!s110 1678351428
+!i10b 1
+!s100 ?<DYGQZ9Uab_GDc_9PTJF0
+IC<Gi9PcLEMceHCO;Vi<?n2
+R1
+R0
+w1678351412
+8../../hdl/verilog/Temp_sensor_model.v
+F../../hdl/verilog/Temp_sensor_model.v
+L0 7
+R2
+r1
+!s85 0
+31
+R3
+!s107 ../../hdl/verilog/Temp_sensor_model.v|
+!s90 -reportprogress|300|../../hdl/verilog/Temp_sensor_model.v|
+!i113 0
+R4
+R5
+n@temp_sensor_model
